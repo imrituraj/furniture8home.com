@@ -32,8 +32,7 @@ A luxury web showcase and digital catalog for **furniture8home.com**, featuring 
 ## 📁 Repository Structure
 
 ```
-├── index.html                           # Primary production web page
-├── furniture8home.com — Sharma & Sons.html # Standalone standalone showcase
+├── index.html                           # Primary production web application
 ├── products_data.json                   # Structured product database (49 items)
 ├── template.html                        # Base HTML template for rebuilds
 ├── build.py                             # Build script compiling data into HTML
