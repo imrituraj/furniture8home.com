@@ -1,0 +1,191 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import products from './data/products.json';
+import Header from './components/Header.jsx';
+import Hero from './components/Hero.jsx';
+import Catalog from './components/Catalog.jsx';
+import ProductModal from './components/ProductModal.jsx';
+import WishlistDrawer from './components/WishlistDrawer.jsx';
+import { Bespoke, Footer, Reviews, Showrooms, WhyUs } from './components/SiteSections.jsx';
+import { WaIcon } from './components/Icons.jsx';
+import { waLink } from './lib/whatsapp.js';
+import { clearProductUrl, findProductByLocation, writeProductUrl } from './lib/productLink.js';
+
+const WISH_KEY = 'f8h_wishlist';
+const THEME_KEY = 'f8h_theme';
+
+function readWishlist() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WISH_KEY) || '[]');
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+export default function App() {
+  const [category, setCategory] = useState('all');
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState('featured');
+  const [wishlist, setWishlist] = useState(readWishlist);
+  const [active, setActive] = useState(() => findProductByLocation(products));
+  const [fabric, setFabric] = useState('Royal Navy');
+  const [chaise, setChaise] = useState('Right Facing Chaise');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products
+      .filter((product) => {
+        const matchCat = category === 'all' || product.cat === category;
+        if (!q) return matchCat;
+        const haystack = [product.name, product.desc, product.cat, product.material, product.badge].join(' ').toLowerCase();
+        return matchCat && haystack.includes(q);
+      })
+      .sort((a, b) => {
+        if (sort === 'price-asc') return (a.priceNum || 0) - (b.priceNum || 0);
+        if (sort === 'price-desc') return (b.priceNum || 0) - (a.priceNum || 0);
+        if (sort === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
+        if (sort === 'name-asc') return a.name.localeCompare(b.name);
+        return a.id - b.id;
+      });
+  }, [category, query, sort]);
+
+  const savedProducts = products.filter((product) => wishlist.includes(product.id));
+
+  useEffect(() => {
+    localStorage.setItem(WISH_KEY, JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  useEffect(() => {
+    document.body.style.overflow = active || drawerOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [active, drawerOpen]);
+
+  const closeProduct = useCallback(() => {
+    setActive(null);
+    clearProductUrl();
+  }, []);
+
+  const openProduct = useCallback((product, { replace = false } = {}) => {
+    setActive(product);
+    setFabric('Royal Navy');
+    setChaise('Right Facing Chaise');
+    writeProductUrl(product.slug, { replace });
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        closeProduct();
+        setDrawerOpen(false);
+        setMenuOpen(false);
+      }
+    };
+    const onPop = () => {
+      const product = findProductByLocation(products);
+      setActive(product);
+      if (product) {
+        setFabric('Royal Navy');
+        setChaise('Right Facing Chaise');
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('popstate', onPop);
+    };
+  }, [closeProduct]);
+
+  useEffect(() => {
+    document.title = active
+      ? `${active.name} · Furniture8home`
+      : 'Furniture8home — Sofas & Custom Furniture in Guwahati';
+  }, [active]);
+
+  function filterCategory(next) {
+    setCategory(next);
+    setMenuOpen(false);
+    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function toggleWish(id) {
+    setWishlist((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    let next = 'dark';
+    if (current === 'dark') next = 'light';
+    else if (current === 'light') next = 'dark';
+    else next = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(THEME_KEY, next);
+  }
+
+  function resetFilters() {
+    setCategory('all');
+    setQuery('');
+    setSort('featured');
+  }
+
+  return (
+    <>
+      <Header
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((open) => !open)}
+        onCloseMenu={() => setMenuOpen(false)}
+        onFilter={filterCategory}
+        wishlistCount={wishlist.length}
+        onOpenWishlist={() => setDrawerOpen(true)}
+        onToggleTheme={toggleTheme}
+      />
+      <main>
+        <Hero total={products.length} />
+        <Catalog
+          products={products}
+          visible={visible}
+          category={category}
+          query={query}
+          sort={sort}
+          wishlist={wishlist}
+          onQuery={setQuery}
+          onSort={setSort}
+          onFilter={filterCategory}
+          onReset={resetFilters}
+          onOpen={openProduct}
+          onToggleWish={toggleWish}
+        />
+        <Bespoke />
+        <WhyUs />
+        <Reviews />
+        <Showrooms />
+      </main>
+      <Footer onFilter={filterCategory} />
+      <ProductModal
+        product={active}
+        fabric={fabric}
+        chaise={chaise}
+        saved={active ? wishlist.includes(active.id) : false}
+        onClose={closeProduct}
+        onFabric={setFabric}
+        onChaise={setChaise}
+        onToggleWish={toggleWish}
+      />
+      <WishlistDrawer open={drawerOpen} products={savedProducts} onClose={() => setDrawerOpen(false)} onToggle={toggleWish} />
+      <a className="floating-wa-btn" href={waLink('Hi Furniture8home, I am looking for furniture in Guwahati.')} target="_blank" rel="noopener noreferrer" title="WhatsApp Furniture8home on 60025 84075">
+        <div className="pulse-dot" />
+        <WaIcon size={20} />
+        <span>WhatsApp Us</span>
+      </a>
+      <button className={`back-to-top${showTop ? ' visible' : ''}`} title="Back to top" aria-label="Back to top" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
+      </button>
+    </>
+  );
+}
