@@ -122,7 +122,49 @@
     }
     .top-bar strong { color: #F7D794; font-weight: 600; }
     .top-bar a { text-decoration: underline; text-underline-offset: 3px; color: #FFFFFF; }
-    .top-bar .phone-link { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; }
+    .top-bar .phone-link { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; text-decoration: none; }
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 4px;
+      background: #fff;
+      color: var(--brand-sage);
+      border: 0;
+      border-radius: 999px;
+      padding: 3px 11px 3px 3px;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      font-family: 'Noto Sans Bengali', var(--font-sans);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .lang-switch:hover { background: #F7D794; }
+    .lang-mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--brand-sage);
+      color: #F7D794;
+      display: grid;
+      place-items: center;
+      font-family: 'Noto Serif Bengali', serif;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .lang-mark.is-en {
+      font-family: 'Plus Jakarta Sans', var(--font-sans);
+      font-size: 9px;
+      letter-spacing: 0.04em;
+    }
+    html[lang="as"] {
+      --font-sans: 'Noto Sans Bengali', 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif: 'Noto Serif Bengali', 'Fraunces', Georgia, serif;
+    }
+    html[lang="as"] .logo-text {
+      font-family: 'Fraunces', Georgia, serif;
+    }
 
     /* --- Sticky Header --- */
     header {

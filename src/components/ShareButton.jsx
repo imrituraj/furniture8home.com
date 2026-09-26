@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ShareIcon } from './Icons.jsx';
 import { productUrl } from '../lib/productLink.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 
 async function copyText(text) {
   try {
@@ -19,15 +20,17 @@ async function copyText(text) {
 }
 
 export default function ShareButton({ product, className = '', label = '' }) {
+  const { t } = useLang();
   const [copied, setCopied] = useState(false);
+  const shareLabel = label || t('share');
 
   async function share(event) {
     event.preventDefault();
     event.stopPropagation();
     const url = productUrl(product.slug);
     const payload = {
-      title: `${product.name} · Furniture8home`,
-      text: `${product.name} (${product.price}) at Furniture8home, Guwahati`,
+      title: t('docTitleProduct', { name: product.name }),
+      text: t('shareText', { name: product.name, price: product.price }),
       url,
     };
 
@@ -45,15 +48,15 @@ export default function ShareButton({ product, className = '', label = '' }) {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
-  const text = copied ? 'Link copied' : (label || 'Share link');
+  const text = copied ? t('copied') : shareLabel;
 
   return (
     <button
       type="button"
       className={`${className}${copied ? ' is-copied' : ''}`}
       onClick={share}
-      title={copied ? 'Link copied' : 'Share this product'}
-      aria-label={label ? text : (copied ? 'Link copied' : `Share ${product.name}`)}
+      title={copied ? t('copied') : t('shareTitle')}
+      aria-label={label ? text : (copied ? t('copied') : `${t('share')} ${product.name}`)}
     >
       <ShareIcon size={label ? 16 : 17} />
       {label ? <span>{text}</span> : null}

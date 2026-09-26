@@ -9,6 +9,7 @@ import { Bespoke, Footer, Reviews, Showrooms, WhyUs } from './components/SiteSec
 import { WaIcon } from './components/Icons.jsx';
 import { waLink } from './lib/whatsapp.js';
 import { clearProductUrl, findProductByLocation, writeProductUrl } from './lib/productLink.js';
+import { useLang } from './i18n/LanguageContext.jsx';
 
 const WISH_KEY = 'f8h_wishlist';
 const THEME_KEY = 'f8h_theme';
@@ -23,6 +24,7 @@ function readWishlist() {
 }
 
 export default function App() {
+  const { t, localize } = useLang();
   const [category, setCategory] = useState('all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('featured');
@@ -40,17 +42,18 @@ export default function App() {
       .filter((product) => {
         const matchCat = category === 'all' || product.cat === category;
         if (!q) return matchCat;
-        const haystack = [product.name, product.desc, product.cat, product.material, product.badge].join(' ').toLowerCase();
+        const item = localize(product);
+        const haystack = [product.name, product.desc, item.name, item.desc, product.cat, product.material, product.badge, item.badge].join(' ').toLowerCase();
         return matchCat && haystack.includes(q);
       })
       .sort((a, b) => {
         if (sort === 'price-asc') return (a.priceNum || 0) - (b.priceNum || 0);
         if (sort === 'price-desc') return (b.priceNum || 0) - (a.priceNum || 0);
         if (sort === 'rating-desc') return (b.rating || 0) - (a.rating || 0);
-        if (sort === 'name-asc') return a.name.localeCompare(b.name);
+        if (sort === 'name-asc') return localize(a).name.localeCompare(localize(b).name, 'as');
         return a.id - b.id;
       });
-  }, [category, query, sort]);
+  }, [category, query, sort, localize]);
 
   const savedProducts = products.filter((product) => wishlist.includes(product.id));
 
@@ -103,10 +106,11 @@ export default function App() {
   }, [closeProduct]);
 
   useEffect(() => {
-    document.title = active
-      ? `${active.name} · Furniture8home`
-      : 'Furniture8home — Sofas & Custom Furniture in Guwahati';
-  }, [active]);
+    const item = active ? localize(active) : null;
+    document.title = item
+      ? t('docTitleProduct', { name: item.name })
+      : t('docTitle');
+  }, [active, localize, t]);
 
   function filterCategory(next) {
     setCategory(next);
@@ -178,12 +182,12 @@ export default function App() {
         onToggleWish={toggleWish}
       />
       <WishlistDrawer open={drawerOpen} products={savedProducts} onClose={() => setDrawerOpen(false)} onToggle={toggleWish} />
-      <a className="floating-wa-btn" href={waLink('Hi Furniture8home, I am looking for furniture in Guwahati.')} target="_blank" rel="noopener noreferrer" title="WhatsApp Furniture8home on 60025 84075">
+      <a className="floating-wa-btn" href={waLink(t('waFloat'))} target="_blank" rel="noopener noreferrer" title={t('floatWa')}>
         <div className="pulse-dot" />
         <WaIcon size={20} />
-        <span>WhatsApp Us</span>
+        <span>{t('floatCta')}</span>
       </a>
-      <button className={`back-to-top${showTop ? ' visible' : ''}`} title="Back to top" aria-label="Back to top" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      <button className={`back-to-top${showTop ? ' visible' : ''}`} title={t('backTop')} aria-label={t('backTop')} type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
       </button>
     </>
